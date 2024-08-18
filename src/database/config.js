@@ -8,6 +8,6 @@ export async function connect() {
 
         return await sequelize.authenticate();
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        console.error('Error al conectar a la base de datos:', error);
     }
 }
