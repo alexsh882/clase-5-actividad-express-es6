@@ -1,36 +1,42 @@
-import { DataTypes } from 'sequelize';
-import { sequelize } from '../database/connection.js';
-import { ROLES } from '../const/roles.js';
+import { DataTypes } from "sequelize";
+import { sequelize } from "../database/connection.js";
+import { ROLES } from "../const/roles.js";
+import { Role } from "./role.model.js";
 
-export const User = sequelize.define('User', {
+export const User = sequelize.define(
+  "User",
+  {
     user_id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
     },
     names: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     username: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     password: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    role: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: ROLES.USER
-    }
-}, {
+    role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Role,
+        key: Role.primaryKeyAttribute,
+      },
+    },
+  },
+  {
     // Other model options go here
-    tableName: 'users',
+    tableName: "users",
     paranoid: true,
     timestamps: true,
-    defaultScope: {
-        attributes: { exclude: ['password'] }
-    }
-});
+   
+  }
+);

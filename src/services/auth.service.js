@@ -1,73 +1,104 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import { User } from '../models/user.model.js';
-import { ROLES } from '../const/roles.js';
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import { User } from "../models/user.model.js";
+import { Role } from "../models/role.model.js";
+import { ROLES } from "../const/roles.js";
+
+export class BadRequestError extends Error {}
 
 export class AuthService {
+  #userModel;
 
-    #userModel;
+  #roleModel;
 
-    constructor(User) {
-        this.#userModel = User;
+  constructor(User, Role) {
+    this.#userModel = User;
+    this.#roleModel = Role;
+  }
+
+  async signUp({ names, username, password }) {
+    const userFounded = await this.#userModel.findOne({
+      where: { username: username },
+    });
+
+    if (userFounded) {
+      throw new Error("El usuario ya existe");
     }
 
-    async signUp({ names, username, password }) {
+    const roleUser = await this.#roleModel.findOne({
+      where: { name: ROLES.USER },
+    });
 
-        const userFounded = await this.#userModel.findOne({
-            where: { username: user.username }
-        });
+    if (!roleUser) {
+      throw new Error("El rol no existe");
+    }
 
-        if (userFounded) {
-            throw new Error('El usuario ya existe');
+    const newUser = await this.#userModel.create({
+      names,
+      username,
+      password: bcrypt.hashSync(password, 8),
+      role_id: roleUser.role_id,
+    });
+
+    const user = {
+      ...newUser.dataValues,
+      user_role: roleUser,
+      password: undefined,
+      role_id: undefined,
+    };
+
+    const token = await this.#createToken(newUser);
+
+    return { user, token };
+  }
+
+  async signIn({ username, password }) {
+    const userFounded = await this.#userModel.findOne({
+      where: { username },
+      include: {
+        model: this.#roleModel,
+        as: "user_role",
+      },
+      attributes: { exclude: ["role_id"] },
+    });
+
+    if (!userFounded) {
+      throw new BadRequestError("Usuario o contraseña incorrecta");
+    }
+
+    const isPasswordValid = bcrypt.compareSync(password, userFounded.password);
+
+    if (!isPasswordValid) {
+      throw new BadRequestError("Usuario o contraseña incorrecta");
+    }
+
+    const token = await this.#createToken(userFounded);
+
+    const user = {
+      ...userFounded.dataValues,
+      password: undefined,
+    };
+
+    return { user, token };
+  }
+
+  async #createToken(user) {
+    return new Promise((resolve, reject) => {
+      jwt.sign(
+        { user_id: user.user_id },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: 86400, // 24 horas
+        },
+        (err, token) => {
+          if (err) {
+            reject(err);
+          }
+          resolve(token);
         }
-
-        const newUser = this.#userModel.create({
-            names,
-            username,
-            password: bcrypt.hashSync(password, 8),
-            role: ROLES.USER
-        });
-
-        delete newUser.password;
-
-        const token = await this.#createToken(newUser);
-
-        return { newUser, token };
-    }
-
-    async signIn({ username, password }) {
-        const userFounded = await this.#userModel.findOne({
-            where: { username }
-        });
-
-        if (!userFounded) {
-            throw new Error('Usuario o contraseña incorrecta');
-        }
-
-        const isPasswordValid = bcrypt.compareSync(password, userFounded.password);
-
-        if (!isPasswordValid) {
-            throw new Error('Usuario o contraseña incorrecta');
-        }
-
-        const token = await this.#createToken(userFounded);
-
-        return { userFounded, token };
-    }
-
-
-    async #createToken(user) {
-        return new Promise((resolve, reject) => {
-            jwt.sign({ user_id: user.user_id }, process.env.JWT_SECRET, {
-                expiresIn: 86400 // 24 horas
-            }, (err, token) => {
-                if (err) {
-                    reject(err);
-                }
-                resolve(token);
-            });
-        });
-    }
+      );
+    });
+  }
 }
 
-export const authService = new AuthService(User);
+export const authService = new AuthService(User, Role);

@@ -1,3 +1,4 @@
+import { BadRequestError } from "../services/auth.service.js";
 
 export default class AuthController {
 
@@ -8,10 +9,10 @@ export default class AuthController {
     }
 
     async register(req, res) {
-        const { name, username, password } = req.body;
+        const { names, username, password } = req.body;
 
         try {
-            const { user, token } = await this.#authService.signUp({ name, username, password });
+            const { user, token } = await this.#authService.signUp({ names, username, password });
 
             res.json({ user, token, message: 'Usuario creado correctamente' });
         } catch (error) {
@@ -29,7 +30,10 @@ export default class AuthController {
 
             res.json({ user, token, message: 'Iniciaste sesión correctamente' });
         } catch (error) {
-            console.log(error);
+            if (error instanceof BadRequestError) {
+                return res.status(400).json({ message: error.message });
+                
+            }
             res.status(500).json({ message: error.message });
         }
     }
