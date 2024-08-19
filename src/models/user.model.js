@@ -8,6 +8,10 @@ export const User = sequelize.define('User', {
         autoIncrement: true,
         primaryKey: true
     },
+    names: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     username: {
         type: DataTypes.STRING,
         allowNull: false
@@ -25,5 +29,8 @@ export const User = sequelize.define('User', {
     // Other model options go here
     tableName: 'users',
     paranoid: true,
-    timestamps: true
+    timestamps: true,
+    defaultScope: {
+        attributes: { exclude: ['password'] }
+    }
 });
