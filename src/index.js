@@ -10,7 +10,7 @@ const app = express();
 const server = new Server(app)
 
 
-await connect();
+await connect().then(() => console.log("Conexión a la base de datos exitosa."));
 
 
 server.start();
