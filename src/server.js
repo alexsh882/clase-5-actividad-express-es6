@@ -1,6 +1,8 @@
 
+import express from 'express';
 import cors from 'cors';
 import morgan from "morgan";
+
 
 import ConfigService from './config/config.service.js'
 import helmet from "helmet";
@@ -8,7 +10,9 @@ import helmet from "helmet";
 import authRoutes from './routes/auth.routes.js';
 
 class Server {
+
     #app;
+
     constructor(httpServer) {
 
         const config = new ConfigService();
@@ -22,6 +26,10 @@ class Server {
     }
 
     middlewares() {
+
+        this.#app.use(express.json());
+        this.#app.use(express.urlencoded({ extended: true }));
+
         this.#app.use(morgan('dev'));
         this.#app.use(helmet());
         this.#app.use(cors());
@@ -29,9 +37,7 @@ class Server {
     }
 
     routes() {
-        this.#app.use('/', (req, res) => {
-            res.json({ message: 'e-commerce API REST' });
-        });
+        
         this.#app.use(authRoutes);
     }
 
