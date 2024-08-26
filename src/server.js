@@ -8,6 +8,8 @@ import ConfigService from './config/config.service.js'
 import helmet from "helmet";
 
 import authRoutes from './routes/auth.routes.js';
+import productRoutes from './routes/products.routes.js';
+import { isAuthenticated } from './middleware/authentication.js';
 
 class Server {
 
@@ -36,9 +38,9 @@ class Server {
 
     }
 
-    routes() {
-        
+    routes() {        
         this.#app.use(authRoutes);
+        this.#app.use(isAuthenticated, productRoutes)
     }
 
     start() {

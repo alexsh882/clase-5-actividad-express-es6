@@ -99,6 +99,22 @@ export class AuthService {
       );
     });
   }
+
+  async verifyToken(token) {
+    return new Promise((resolve, reject) => {
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+          reject(err);
+        }
+        if (decoded.user_id) {
+          const user = this.#userModel.findByPk(decoded.user_id);
+          resolve(user);
+        }
+        reject(new Error("Token no válido o no existe"));
+
+      });
+    });
+  }
 }
 
 export const authService = new AuthService(User, Role);
